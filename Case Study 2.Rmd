@@ -13,10 +13,11 @@ library(ISLR)
 library(randomForest)
 library(MASS)
 library(caret)
+library(survival)
+library(gbm)
 library(TSA)
 library(ipred)
 library(rpart)
-library(gbm) ## This library is giving me hard time will re-install it in a bit
 library(TH.data)
 ```
 
@@ -107,10 +108,11 @@ Prediction on training set and measuring MSPE
 
 ```{r}
 yhat <- predict(gbag, newdata = NewData_train)
-sqrt(mean((yhat - NewData_train$popular)^2))
+bagging_train_MSPE <- sqrt(mean((yhat - NewData_train$popular)^2))
+bagging_train_MSPE
 ```
 
-Here, from our training set out MSPE is 0.3931 which is quite small, now we will see our MSPE and prediction on the held out test set. 
+Here, from our training set out MSPE is 0.3918 which is quite small, now we will see our MSPE and prediction on the held out test set. 
 
 Prediction and MSPE on held out test set 
 
@@ -121,9 +123,10 @@ print(gbag_test)
 
 ```{r}
 yhat_test <- predict(gbag_test, newdata = NewData_test)
-sqrt(mean((yhat_test - NewData_test$popular)^2))
+bagging_test_MPSE <- sqrt(mean((yhat_test - NewData_test$popular)^2))
+bagging_test_MPSE
 ```
-We can see that out MSPE from our held out test set is 0.3936, whihc is slightly higher than our MSPE on training set.
+We can see that out MSPE from our held out test set is 0.3930, which is slightly higher than our MSPE on training set.
 
 (III) Random Forest
 
@@ -206,5 +209,25 @@ sqrt(mean((boost.pred - NewData_test$popular)^2))
 From our held out test set our MSPE turns out to be 0.393 which in slightly higher than our training set
 
 
-OVERVIEW: Comparison between Case study classifiers and HW-3 classifiers. 
+(B) What is the MSPE for each of your fitted models? Compare and contrast between models and these ensemble-based models with the classification models that you fit in Homework 3. What are the advantages and Disadvantages of using these ensemble methods ?
+
+MSPE for each fitted models for test and training set is : 
+
+Classification Tree : 
+Training MSPE : 
+Test MSPE : 
+
+Bagging : 
+Training MSPE : 0.3918575
+Test MSPE : 0.3930174
+
+Random Forests : 
+Training MSPE : 0.1650788
+Test MSPE : 0.1625907
+
+Boosting : 
+Training MSPE : 0.3714702
+Test MSPE : 0.3928828
+
+These ensemble methods are somewhat similar to methods like K-NN, LDA, QDA, Logistic regression and Naive Bayes Classifier. Just like these methods, ensemble based methods also take MSPE into account to predict the popularity of the website, however ensemble methods does not gives the accuracy of the model but only MSPE where as classification models gives us solid accuracy scores which tells a whole lot of story about the data. Advantages of these ensemle methods is this that it clearly tells the most important variable that is going to affect the popularity of a particular website which helps in only focusing on few important variables. However one of the biggest drawbacks of these ensemble based methods is this that they wont tell how accurate these models are. For instance, K-NN will tell about how accurate our model is in predicting the popularity of the website where as a classification tree will only look at important varibales and make decisions based solely on those facts. 
 
