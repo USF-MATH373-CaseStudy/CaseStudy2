@@ -1,6 +1,6 @@
 ---
 title: "Case Study 2"
-author: "Sahil Jain"
+author: "Sahil Jain, Jacques Sham, Mina Chan, Charles Sui"
 date: "April 6, 2018"
 output: html_document
 ---
@@ -9,6 +9,8 @@ Loading Libraries
 
 ```{r}
 library(tree)
+library(tidyverse)
+library(magrittr)
 library(ISLR)
 library(randomForest)
 library(MASS)
@@ -42,9 +44,22 @@ NewData_train <- dataTrain[,-c(1,2,61)]
 NewData_test <- dataTest[,-c(1,2,61)]
 ```
 
+Classification data variable.
+
 ```{r}
-popularity <- data.frame(NewData_train, NewData_train$popular)
-popularity_test <- data.frame(NewData_test)
+train_tree <- NewData_train
+test_tree <- NewData_test
+```
+
+```{r}
+train_tree$popular <- factor(train_tree$popular)
+test_tree$popular <- factor(test_tree$popular)
+
+data.train.class <- train_tree$popular
+data.test.class <- test_tree$popular
+
+set.seed(1)
+data.train.upsample <- upSample(train_tree, data.train.class, T)$x
 ```
 
 (A) Build classifiers for this data set using the tree based methods that we’ve learned in class. In particular, build classifiers on the training data and assess the performance of each of the following methods on the test data (available on Canvas)
@@ -52,50 +67,56 @@ popularity_test <- data.frame(NewData_test)
 (I) Classification tree
 
 ```{r}
-tree.popularity <- tree(NewData_train$popular ~ ., NewData_train)
-summary(tree.popularity)
+tree.train <- tree(popular ~ ., data = data.train.upsample)
+summary(tree.train)
 ```
 
 ```{r}
-plot(tree.popularity)
-text(tree.popularity, pretty = 0)
+plot(tree.train)
+text(tree.train, pretty = 0)
 ```
+
+Error Classification 
 
 ```{r}
-tree.popularity
+tree.pred <- predict(tree.train, NewData_train, type = "class")
+table(tree.pred, data.train.class)
+mean(tree.pred == data.train.class)
 ```
 
-Looking at the prediction on the test set 
+Cross Validation 
 
 ```{r}
-tree.pred <- predict(tree.popularity, popularity)
+cv.pop <- cv.tree(tree.train, FUN = prune.misclass)
+cv.pop
 ```
 
-Evaluating MisClassifications 
+Plot 
 
 ```{r}
-table(tree.pred, popularity$popular)
+par(mfrow = c(1, 2))
+plot(cv.pop$size, cv.pop$dev, type = "b")
+plot(cv.pop$k, cv.pop$dev, type = "b")
 ```
 
-Calculating Accuracy 
+Pruning the tree
 
 ```{r}
-mean(tree.pred == popularity$popular)
+par(mfrow = c(1,1))
+prune.pop <- prune.misclass(tree.train, best = cv.pop$size[which.min(cv.pop$dev)])
+plot(prune.pop)
+text(prune.pop, pretty = 0)
 ```
 
-hmmm...  strange accuracy is zero... 
-
-Cross Validation for Classification tree 
+Testing our model on held out test set
 
 ```{r}
-set.seed(3)
-
-cv.popularity <- cv.tree(tree.popularity, FUN = prune.misclass)
-
-cv.popularity
+prune.pred <- predict(prune.pop, NewData_test, type = "class")
+table(prune.pred, data.test.class)
+mean(prune.pred == data.test.class)
 ```
 
-DISCLAIMER : I was not able to finish this part of the classification tree because I was lost. So i will probably work on this later today and will upload another updated file. 
+So from tree classification we can see that our MSPE for training set was .40 where as our MSPE for our held out test set was .229 which is slightly better than training set. From this tree we can see that variables weekend and Kw_max_avg are very important variables. 
 
 (II) Bagging
 
@@ -112,7 +133,7 @@ bagging_train_MSPE <- sqrt(mean((yhat - NewData_train$popular)^2))
 bagging_train_MSPE
 ```
 
-Here, from our training set out MSPE is 0.3918 which is quite small, now we will see our MSPE and prediction on the held out test set. 
+Here, from our training set out MSPE is 0.3930 which is quite small, now we will see our MSPE and prediction on the held out test set. 
 
 Prediction and MSPE on held out test set 
 
@@ -126,7 +147,7 @@ yhat_test <- predict(gbag_test, newdata = NewData_test)
 bagging_test_MPSE <- sqrt(mean((yhat_test - NewData_test$popular)^2))
 bagging_test_MPSE
 ```
-We can see that out MSPE from our held out test set is 0.3930, which is slightly higher than our MSPE on training set.
+We can see that out MSPE from our held out test set is 0.3938, which is slightly higher than our MSPE on training set.
 
 (III) Random Forest
 
@@ -214,8 +235,8 @@ From our held out test set our MSPE turns out to be 0.393 which in slightly high
 MSPE for each fitted models for test and training set is : 
 
 Classification Tree : 
-Training MSPE : 
-Test MSPE : 
+Training MSPE : .40 
+Test MSPE : .229
 
 Bagging : 
 Training MSPE : 0.3918575
